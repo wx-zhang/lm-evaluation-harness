@@ -3,13 +3,8 @@ from dataclasses import dataclass, field, asdict
 
 import re
 import ast
-import yaml
 import logging
-import evaluate
 import random
-import itertools
-import functools
-from tqdm import tqdm
 
 import datasets
 import numpy as np
@@ -20,7 +15,6 @@ from collections.abc import Callable
 from lm_eval import utils
 from lm_eval.api import samplers
 from lm_eval.api.instance import Instance
-from lm_eval.api.filter import FilterEnsemble
 
 from lm_eval.prompts import get_prompt
 from lm_eval.filters import build_filter_ensemble

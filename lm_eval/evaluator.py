@@ -1,6 +1,5 @@
 import random
 import itertools
-<<<<<<< HEAD
 import json
 import collections
 import sys
@@ -24,16 +23,6 @@ from lm_eval.utils import (
     simple_parse_args_string,
     eval_logger,
 )
-=======
-import random
-
-import lm_eval.metrics
-import lm_eval.models
-import lm_eval.tasks
-import lm_eval.base
-from lm_eval.utils import positional_deprecated, run_task_tests
-from lm_eval.models.gpt2 import HFLM
->>>>>>> master
 
 import numpy as np
 import transformers
@@ -92,12 +81,12 @@ def simple_evaluate(
     :return
         Dictionary of results
     """
-<<<<<<< HEAD
-    random.seed(0)
-    np.random.seed(1234)
-    torch.manual_seed(
-        1234
-    )  # TODO: this may affect training runs that are run with evaluation mid-run.
+    # we have already seed everything
+    # random.seed(0)
+    # np.random.seed(1234)
+    # torch.manual_seed(
+    #     1234
+    # )  # TODO: this may affect training runs that are run with evaluation mid-run.
 
     assert (
         tasks != []
@@ -110,23 +99,11 @@ def simple_evaluate(
         )
         if gen_kwargs == "":
             gen_kwargs = None
-=======
-    # random.seed(1234)
-    # np.random.seed(1234)
-    # We have already seed everything in the main function
-
-    assert tasks != [], "No tasks specified"
->>>>>>> master
 
     if isinstance(model, str):
         if model_args is None:
             model_args = ""
-<<<<<<< HEAD
         lm = lm_eval.api.registry.get_model(model).create_from_arg_string(
-=======
-        
-        lm = lm_eval.models.get_model(model).create_from_arg_string(
->>>>>>> master
             model_args,
             {
                 "batch_size": batch_size,
@@ -194,7 +171,6 @@ def simple_evaluate(
         log_samples=log_samples,
     )
 
-<<<<<<< HEAD
     if lm.rank == 0:
         # add info about the model and few shot config
         results["config"] = {
@@ -216,30 +192,6 @@ def simple_evaluate(
         return results
     else:
         return None
-=======
-    # add info about the model and few shot config
-    model_name = None
-    if isinstance(model, str):
-        model_name = model
-    elif isinstance(model, transformers.PreTrainedModel):
-        model_name = "pretrained=" + model.config._name_or_path
-    results["config"] = {
-        "model": model_name,
-        "model_args": model_args,
-        "num_fewshot": num_fewshot,
-        "batch_size": batch_size,
-        "batch_sizes": list(lm.batch_sizes.values())
-        if hasattr(lm, "batch_sizes")
-        else [],
-        "device": device,
-        "no_cache": no_cache,
-        "limit": limit,
-        "bootstrap_iters": bootstrap_iters,
-        "description_dict": description_dict,
-    }
-
-    return results
->>>>>>> master
 
 
 decontaminate_suffix = "_decontaminate"
@@ -311,13 +263,8 @@ def evaluate(
             group_name = None
             task_hierarchy[task_name] = []
 
-<<<<<<< HEAD
         if task is None:
             continue
-=======
-    docs_for_decontamination = collections.defaultdict(list)
-    
->>>>>>> master
 
         versions[task_name] = task.VERSION
         configs[task_name] = dict(task.dump_config())
@@ -349,40 +296,9 @@ def evaluate(
 
         task.build_all_requests(limit=limit, rank=lm.rank, world_size=lm.world_size)
 
-<<<<<<< HEAD
         eval_logger.debug(
             f"Task: {task_name}; number of requests on this rank: {len(task.instances)}"
         )
-=======
-            docs[(task_name, doc_id)] = doc
-            ctx = task.fewshot_context(
-                doc=doc, num_fewshot=num_fewshot, rnd=rnd, description=description
-            )
-            reqs = task.construct_requests(doc, ctx)
-
-            if write_out:
-                prompt_details.append({"doc_id": doc_id})
-
-            # print the prompt for the first few documents
-            if doc_id < 5:
-                print(
-                    f"Task: {task_name}; document {doc_id}; context prompt (starting on next line):\n{ctx}\n(end of prompt on previous line)"
-                )
-                print("Requests:", reqs)
-
-            if not isinstance(reqs, (list, tuple)):
-                reqs = [reqs]
-            for i, req in enumerate(reqs):
-                requests[req.request_type].append(req)
-                # i: index in requests for a single task instance
-                # doc_id: unique id that we can get back to a doc using `docs`
-                requests_origin[req.request_type].append((i, task_name, doc, doc_id))
-
-                if write_out:
-                    prompt_details[-1][f"prompt_{i}"] = "".join(
-                        (map(lambda x: "".join(x), req.args))
-                    )
->>>>>>> master
 
         if write_out:
             for inst in task.instances:
@@ -412,7 +328,6 @@ def evaluate(
     ### Run LM on inputs, get all outputs ###
     # execute each type of request
     for reqtype, reqs in requests.items():
-<<<<<<< HEAD
         eval_logger.info("Running {} requests".format(reqtype))
         # create `K` copies of each request `req` based off `K = req.repeats`
         cloned_reqs = []
@@ -441,34 +356,6 @@ def evaluate(
             if task is None:
                 continue
         task.apply_filters()
-=======
-        # TODO: right now, this code runs multiple separate LM requests for multiple Requests differing
-        #       only in index. We could implement some kind of caching, but that would be more of a band-aid
-        #       solution. we could also implement some kind of auto-grouping here;
-        #       they should end up next to each other.
-
-        print("Running", reqtype, "requests")
-
-        resps = getattr(lm, reqtype)([req.args for req in reqs])
-        resps = [
-            x if req.index is None else x[req.index] for x, req in zip(resps, reqs)
-        ]
-
-        for resp, (i, task_name, doc, doc_id) in zip(resps, requests_origin[reqtype]):
-            process_res_queue[(task_name, doc_id)].append((i, resp))
-
-            if write_out:
-                write_out_info[task_name][doc_id][f"logit_{i}"] = resp
-                task = task_dict[task_name]
-                if isinstance(task, lm_eval.base.MultipleChoiceTask):
-                    write_out_info[task_name][doc_id]["truth"] = doc["gold"]
-                elif isinstance(task, lm_eval.tasks.winogrande.Winogrande):
-                    write_out_info[task_name][doc_id]["truth"] = task.answer_to_num[
-                        doc["answer"]
-                    ]
-                else:
-                    write_out_info[task_name][doc_id]["truth"] = task.doc_to_target(doc)
->>>>>>> master
 
     ### Collect values of metrics on all datapoints ###
     vals = collections.defaultdict(list)
