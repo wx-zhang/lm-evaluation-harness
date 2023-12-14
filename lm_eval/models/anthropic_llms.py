@@ -2,6 +2,7 @@ from lm_eval.api.model import LM
 from lm_eval.api.registry import register_model
 from tqdm import tqdm
 import time
+<<<<<<< HEAD
 from lm_eval import utils
 from typing import List, Any, Tuple
 
@@ -35,6 +36,16 @@ def anthropic_completion(
             List of stop sequences
         kwargs: Any
             Additional model_args to pass to the API client
+=======
+
+
+def anthropic_completion(
+    client, model, prompt, max_tokens_to_sample, temperature, stop
+):
+    """Query Anthropic API for completion.
+
+    Retry with back-off until they respond
+>>>>>>> master
     """
 
     try:
@@ -63,6 +74,17 @@ please install anthropic via `pip install lm-eval[anthropic]` or `pip install -e
             eval_logger.warning(
                 f"RateLimitError occurred: {e.__cause__}\n Retrying in {backoff_time} seconds"
             )
+<<<<<<< HEAD
+=======
+            print(response)
+            return response.completion
+        except RuntimeError:
+            # TODO: I don't actually know what error Anthropic raises when it times out
+            #       So err update this error when we find out.
+            import traceback
+
+            traceback.print_exc()
+>>>>>>> master
             time.sleep(backoff_time)
             backoff_time *= 1.5
 
@@ -71,6 +93,7 @@ please install anthropic via `pip install lm-eval[anthropic]` or `pip install -e
 class AnthropicLM(LM):
     REQ_CHUNK_SIZE = 20  # TODO: not used
 
+<<<<<<< HEAD
     def __init__(
         self,
         batch_size: int = 1,
@@ -80,6 +103,10 @@ class AnthropicLM(LM):
         **kwargs,  # top_p, top_k, etc.
     ) -> None:
         """Anthropic API wrapper.
+=======
+    def __init__(self, model="claude-2"):
+        """
+>>>>>>> master
 
         :param model: str
             Anthropic model e.g. 'claude-instant-v1', 'claude-2'
@@ -91,6 +118,7 @@ class AnthropicLM(LM):
             Additional model_args to pass to the API client
         """
         super().__init__()
+<<<<<<< HEAD
 
         try:
             import anthropic
@@ -107,6 +135,12 @@ please install anthropic via `pip install lm-eval[anthropic]` or `pip install -e
         self.max_tokens_to_sample = max_tokens_to_sample
         self.tokenizer = self.client.get_tokenizer()
         self.kwargs = kwargs
+=======
+        import anthropic
+
+        self.model = model
+        self.client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+>>>>>>> master
 
     @property
     def eot_token_id(self):

@@ -1,0 +1,3 @@
+model: gpt3 
+model_name: davinci 
+model_args: "engine=${model_name}"

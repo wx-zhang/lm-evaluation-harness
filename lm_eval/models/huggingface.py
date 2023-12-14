@@ -29,6 +29,7 @@ eval_logger = utils.eval_logger
 
 
 def _get_accelerate_args(
+    low_cpu_mem_usage: Optional[bool] = True,
     device_map_option: Optional[str] = "auto",
     max_memory_per_gpu: Optional[Union[int, str]] = None,
     max_cpu_memory: Optional[Union[int, str]] = None,
@@ -48,6 +49,7 @@ def _get_accelerate_args(
     args = {}
     if max_memory:
         args["max_memory"] = max_memory
+    args["low_cpu_mem_usage"] = low_cpu_mem_usage
     args["device_map"] = device_map_option
     args["offload_folder"] = offload_folder
     return args
@@ -73,6 +75,7 @@ class HFLM(LM):
         tokenizer: Optional[str] = None,
         truncation: Optional[bool] = False,
         max_length: Optional[int] = None,
+<<<<<<< HEAD
         device: Optional[str] = "cuda",
         dtype: Optional[Union[str, torch.dtype]] = "auto",
         batch_size: Optional[Union[int, str]] = 1,
@@ -84,6 +87,11 @@ class HFLM(LM):
         # arguments used for splitting a model across GPUs naively.
         # only used if `parallelize=True`.
         parallelize: Optional[bool] = False,
+=======
+        add_special_tokens: Optional[bool] = None,
+        use_accelerate: Optional[bool] = False,
+        low_cpu_mem_usage: Optional[bool] = True,
+>>>>>>> master
         device_map_option: Optional[str] = "auto",
         max_memory_per_gpu: Optional[Union[int, str]] = None,
         max_cpu_memory: Optional[Union[int, str]] = None,
@@ -92,11 +100,96 @@ class HFLM(LM):
         peft: Optional[str] = None,
         load_in_8bit: Optional[bool] = False,
         load_in_4bit: Optional[bool] = False,
+<<<<<<< HEAD
         bnb_4bit_quant_type: Optional[str] = None,
         bnb_4bit_compute_dtype: Optional[Union[str, torch.dtype]] = None,
         gptq: Optional[Union[bool, str]] = False,
         gptq_use_triton: Optional[bool] = False,
     ) -> None:
+=======
+        trust_remote_code: Optional[bool] = False,
+        gptq_use_triton: Optional[bool] = False,
+        inject_fused_attention: Optional[bool] = True,
+        bnb_4bit_quant_type: Optional[str] = None,
+        bnb_4bit_compute_dtype: Optional[Union[str, torch.dtype]] = None,
+        bnb_4bit_use_double_quant: Optional[bool] = False,
+    ):
+        """Initializes a HuggingFace `AutoModel` and `AutoTokenizer` for evaluation.
+        Args:
+            pretrained (str):
+                The HuggingFace Hub model ID name or the path to a pre-trained
+                model to load. This is effectively the `pretrained_model_name_or_path`
+                argument of `from_pretrained` in the HuggingFace `transformers` API.
+            quantized (str or bool, optional, defaults to False):
+                File name of a GPTQ quantized model to load. Set to `True` to use the
+                default name of the quantized model.
+            add_special_tokens (bool, optional, defaults to True):
+                Whether to add special tokens to the input sequences. If `None`, the
+                default value will be set to `True` for seq2seq models (e.g. T5) and
+                `False` for causal models.
+                WARNING: Evaluating causal models with `add_special_tokens=True` is
+                currently __not__ supported.
+            > Large model loading `accelerate` arguments
+            use_accelerate (bool, optional, defaults to False):
+                If True, uses the `accelerate` library to load a large model across
+                multiple devices.
+            low_cpu_mem_usage (bool, optional, defaults to True):
+                It True, uses the `accelerate` library to accelerate loading the model.
+            device_map_option (str, optional, defaults to "auto"):
+                The device map option to use when loading the model with
+                `accelerate`.
+                Options:
+                    "auto", "balanced", "balanced_low_0", "sequential"
+                See the `accelerate` docs for more details on these options:
+                https://huggingface.co/docs/transformers/main/en/main_classes/model#transformers.PreTrainedModel.from_pretrained.device_map
+            max_memory_per_gpu (Union[int, str], optional, defaults to None):
+                The maximum memory available for each GPU in bytes as `int` or in
+                the format f"{significand}{unit_symbol}" where {unit_symbol} is
+                any of ["GB", "MB", "GIB", "MIB"]. Refer to the `max_memory` arg in
+                the "Parameters for big model inference" section of the following
+                docs:
+                https://huggingface.co/docs/transformers/main/en/main_classes/model#transformers.PreTrainedModel.from_pretrained.max_memory
+            max_cpu_memory (Union[int, str], optional, defaults to None):
+                The maximum available CPU RAM in bytes as `int` or in the format
+                f"{significand}{unit_symbol}" where {unit_symbol} is any of
+                ["GB", "MB", "GIB", "MIB"]. Refer to the `max_memory` arg in the
+                "Parameters for big model inference" section of the following docs:
+                https://huggingface.co/docs/transformers/main/en/main_classes/model#transformers.PreTrainedModel.from_pretrained.max_memory
+            offload_folder (str, optional, defaults to "./offload"):
+                The folder to offload weights into if `device_map` contains any
+                "disk" value.
+            dtype (Union[str, torch.dtype], optional, defaults to None):):
+                Converts the model weights to `dtype`, if specified. Strings get
+                converted to `torch.dtype` objects (e.g. `float16` -> `torch.float16`).
+                Use `dtype="auto"` to derive the type from the model’s weights.
+            peft (str, optional, defaults to None):
+                Path of the adapter weights to load from Huggingface. This will usually
+                include a directory that includes the files `adapter_config.json` and
+                `adapter_model.bin`. Compatible with [PEFT](https://github.com/huggingface/peft)
+            load_in_8bit (bool, optional, defaults to False):
+                If True, will convert the loaded model into mixed-8bit quantized model. See:
+                https://huggingface.co/docs/transformers/main/en/main_classes/quantization#load-a-large-model-in-8bit
+            load_in_4bit (bool, optional, defaults to False):
+                If True, will convert the loaded model into mixed-4bit quantized model. See:
+                https://huggingface.co/docs/transformers/main/en/main_classes/quantization#load-a-large-model-in-4bit
+            trust_remote_code (bool, optional, defaults to False):
+                If True, will trust the remote code when loading the model.
+            gptq_use_triton (bool, optional, defaults to False):
+                Use Triton for GPTQ inference.
+            inject_fused_attention (bool, optional, defaults to True):
+                Inject fused attention into GPTQ model.
+            bnb_4bit_quant_type (str, optional, defaults to None):
+                The quantization type to use for BnB 4bit quantization. See:
+                https://github.com/huggingface/transformers/blob/main/src/transformers/utils/quantization_config.py#L77
+            bnb_4bit_compute_dtype (Union[str, torch.dtype], optional, defaults to None):
+                The compute dtype to use for BnB 4bit quantization. See:
+                https://github.com/huggingface/transformers/blob/main/src/transformers/utils/quantization_config.py#L74
+            bnb_4bit_use_double_quant (bool, optional, defaults to False):
+                Whether or not to use double quant to quantize the absmax.
+                https://github.com/huggingface/transformers/blob/main/src/transformers/utils/quantization_config.py#L80
+
+        """
+>>>>>>> master
         super().__init__()
 
         assert isinstance(device, str)
@@ -106,6 +199,7 @@ class HFLM(LM):
         gpus = torch.cuda.device_count()
         accelerator = Accelerator()
 
+<<<<<<< HEAD
         if not (parallelize or accelerator.num_processes > 1):
             # use user-passed device
             device_list = set(
@@ -139,10 +233,22 @@ class HFLM(LM):
                 )
             # TODO: include in warning that `load_in_8bit` etc. affect this too
             self._device = device
+=======
+        self._add_special_tokens = add_special_tokens
+        self.tokenizer = self._create_auto_tokenizer(
+            pretrained=pretrained,
+            revision=revision,
+            subfolder=subfolder,
+            tokenizer=tokenizer,
+            trust_remote_code=trust_remote_code,
+        )
+        self.tokenizer.model_max_length = self.max_length
+>>>>>>> master
 
         model_kwargs = {}
         if parallelize:
             model_kwargs = _get_accelerate_args(
+                low_cpu_mem_usage,
                 device_map_option,
                 max_memory_per_gpu,
                 max_cpu_memory,
@@ -155,6 +261,7 @@ class HFLM(LM):
         self._config = transformers.AutoConfig.from_pretrained(
             pretrained,
             revision=revision,
+<<<<<<< HEAD
             trust_remote_code=trust_remote_code,
         )
 
@@ -184,16 +291,83 @@ class HFLM(LM):
         ]
 
         if not gptq:
+=======
+            subfolder=subfolder,
+            torch_dtype=_get_dtype(dtype, self._config),
+            gptq_use_triton=gptq_use_triton,
+            inject_fused_attention=inject_fused_attention,
+            load_in_8bit=load_in_8bit,
+            load_in_4bit=load_in_4bit,
+            bnb_4bit_quant_type=bnb_4bit_quant_type,
+            bnb_4bit_compute_dtype=bnb_4bit_compute_dtype,
+            bnb_4bit_use_double_quant=bnb_4bit_use_double_quant,
+            **model_kwargs,
+        )
+        # note: peft_path can be different than pretrained model path
+        if peft is not None:
+            self.model = self._create_auto_model_peft(
+                model=self.model,
+                peft=peft,
+                revision=revision,
+                subfolder=subfolder,
+                load_in_4bit=load_in_4bit,
+            )
+        self.model.eval()
+        torch.set_grad_enabled(False)
+
+        self._device = device
+        if use_accelerate and "lm_head" in self.model.hf_device_map:
+            # `accelerate` can place `lm_head` weights on a different device than
+            # the user specified one so we force `self._device` to be the same as
+            # `lm_head`'s.
+            self._device = self.model.hf_device_map["lm_head"]
+        if not use_accelerate and not (load_in_4bit or load_in_8bit):
+            try:
+                self.model.to(self._device)
+            except:
+                print(
+                    "Failed to place model onto specified device. This may be because the model is quantized via `bitsandbytes`. If the desired GPU is being used, this message is safe to ignore."
+                )
+
+    def _create_auto_model(
+        self,
+        *,
+        pretrained: str,
+        quantized: Optional[Union[bool, str]] = False,
+        revision: str,
+        subfolder: str,
+        low_cpu_mem_usage: Optional[bool] = True,
+        device_map: Optional[Union[str, _DeviceMapping]] = None,
+        max_memory: Optional[dict] = None,
+        offload_folder: Optional[str] = None,
+        load_in_8bit: Optional[bool] = False,
+        load_in_4bit: Optional[bool] = False,
+        trust_remote_code: Optional[bool] = False,
+        torch_dtype: Optional[Union[str, torch.dtype]] = None,
+        gptq_use_triton: Optional[bool] = False,
+        inject_fused_attention: Optional[bool] = True,
+        bnb_4bit_quant_type: Optional[str] = None,
+        bnb_4bit_compute_dtype: Optional[Union[str, torch.dtype]] = None,
+        bnb_4bit_use_double_quant: Optional[bool] = False,
+    ) -> transformers.AutoModel:
+        """Returns a pre-trained pytorch model from a pre-trained model configuration."""
+        if not quantized:
+>>>>>>> master
             if load_in_4bit:
                 assert (
                     transformers.__version__ >= "4.30.0"
                 ), "load_in_4bit requires transformers >= 4.30.0"
+<<<<<<< HEAD
+=======
+            model_kwargs = {}
+>>>>>>> master
             if transformers.__version__ >= "4.30.0":
                 model_kwargs["load_in_4bit"] = load_in_4bit
                 if load_in_4bit:
                     if bnb_4bit_quant_type:
                         model_kwargs["bnb_4bit_quant_type"] = bnb_4bit_quant_type
                     if bnb_4bit_compute_dtype:
+<<<<<<< HEAD
                         model_kwargs["bnb_4bit_compute_dtype"] = utils.get_dtype(
                             bnb_4bit_compute_dtype
                         )
@@ -202,11 +376,29 @@ class HFLM(LM):
                 revision=revision,
                 torch_dtype=utils.get_dtype(dtype),
                 low_cpu_mem_usage=low_cpu_mem_usage,
+=======
+                        model_kwargs["bnb_4bit_compute_dtype"] = _get_dtype(
+                            bnb_4bit_compute_dtype
+                        )
+                    if bnb_4bit_use_double_quant:
+                        model_kwargs[
+                            "bnb_4bit_use_double_quant"
+                        ] = bnb_4bit_use_double_quant
+            model = self.AUTO_MODEL_CLASS.from_pretrained(
+                pretrained,
+                revision=revision + ("/" + subfolder if subfolder is not None else ""),
+                low_cpu_mem_usage=low_cpu_mem_usage,
+                device_map=device_map,
+                max_memory=max_memory,
+                offload_folder=offload_folder,
+                load_in_8bit=load_in_8bit,
+>>>>>>> master
                 trust_remote_code=trust_remote_code,
                 load_in_8bit=load_in_8bit,
                 **model_kwargs,
             )
         else:
+<<<<<<< HEAD
             try:
                 from auto_gptq import AutoGPTQForCausalLM
             except ModuleNotFoundError:
@@ -216,14 +408,28 @@ class HFLM(LM):
                 )
 
             self._model = AutoGPTQForCausalLM.from_quantized(
+=======
+            from auto_gptq import AutoGPTQForCausalLM
+
+            model = AutoGPTQForCausalLM.from_quantized(
+>>>>>>> master
                 pretrained,
                 model_basename=None if gptq is True else Path(gptq).stem,
                 low_cpu_mem_usage=low_cpu_mem_usage,
                 trust_remote_code=trust_remote_code,
+<<<<<<< HEAD
                 use_safetensors=True if gptq is True else gptq.endswith(".safetensors"),
                 use_triton=gptq_use_triton,
                 warmup_triton=gptq_use_triton,
                 **model_kwargs,
+=======
+                use_safetensors=True
+                if quantized == True
+                else quantized.endswith(".safetensors"),
+                use_triton=gptq_use_triton,
+                warmup_triton=gptq_use_triton,
+                inject_fused_attention=inject_fused_attention,
+>>>>>>> master
             )
 
         if peft:
@@ -233,6 +439,7 @@ class HFLM(LM):
                 self._model, peft, revision=revision
             )
 
+<<<<<<< HEAD
         # forever after, access self._model through self.model property
         self.model.eval()
         self.model.tie_weights()
@@ -250,6 +457,22 @@ class HFLM(LM):
             revision=revision,
             trust_remote_code=trust_remote_code,
             use_fast=use_fast_tokenizer,
+=======
+    def _create_auto_tokenizer(
+        self,
+        *,
+        pretrained: str,
+        revision: str,
+        subfolder: str,
+        tokenizer: Optional[str] = None,
+        trust_remote_code: Optional[bool] = False,
+    ) -> transformers.PreTrainedTokenizer:
+        """Returns a pre-trained tokenizer from a pre-trained tokenizer configuration."""
+        tokenizer = self.AUTO_TOKENIZER_CLASS.from_pretrained(
+            pretrained if tokenizer is None else tokenizer,
+            revision=revision + ("/" + subfolder if subfolder is not None else ""),
+            trust_remote_code=trust_remote_code,
+>>>>>>> master
         )
 
         self.truncation = truncation
@@ -444,6 +667,7 @@ class HFLM(LM):
 
     def tok_batch_encode(
         self,
+<<<<<<< HEAD
         strings: List[str],
         padding_side: str = "left",
         left_truncate_len: int = None,
@@ -464,6 +688,21 @@ class HFLM(LM):
             padding="longest",
             return_tensors="pt",
             add_special_tokens=add_special_tokens,
+=======
+        *,
+        pretrained: str,
+        revision: str,
+        subfolder: str,
+        tokenizer: Optional[str] = None,
+        trust_remote_code: Optional[bool] = False,
+    ) -> transformers.PreTrainedTokenizer:
+        tokenizer = super()._create_auto_tokenizer(
+            pretrained=pretrained,
+            revision=revision,
+            subfolder=subfolder,
+            tokenizer=tokenizer,
+            trust_remote_code=trust_remote_code,
+>>>>>>> master
         )
         if left_truncate_len:
             encoding["input_ids"] = encoding["input_ids"][:, -left_truncate_len:]
