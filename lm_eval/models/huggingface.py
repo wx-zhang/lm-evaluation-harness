@@ -29,7 +29,6 @@ eval_logger = utils.eval_logger
 
 
 def _get_accelerate_args(
-    low_cpu_mem_usage: Optional[bool] = True,
     device_map_option: Optional[str] = "auto",
     max_memory_per_gpu: Optional[Union[int, str]] = None,
     max_cpu_memory: Optional[Union[int, str]] = None,
@@ -49,7 +48,6 @@ def _get_accelerate_args(
     args = {}
     if max_memory:
         args["max_memory"] = max_memory
-    args["low_cpu_mem_usage"] = low_cpu_mem_usage
     args["device_map"] = device_map_option
     args["offload_folder"] = offload_folder
     return args
@@ -84,7 +82,6 @@ class HFLM(LM):
         ] = None,
         truncation: Optional[bool] = False,
         max_length: Optional[int] = None,
-<<<<<<< HEAD
         device: Optional[str] = "cuda",
         dtype: Optional[Union[str, torch.dtype]] = "auto",
         batch_size: Optional[Union[int, str]] = 1,
@@ -94,11 +91,6 @@ class HFLM(LM):
         # arguments used for splitting a model across GPUs naively.
         # only used if `parallelize=True`.
         parallelize: Optional[bool] = False,
-=======
-        add_special_tokens: Optional[bool] = None,
-        use_accelerate: Optional[bool] = False,
-        low_cpu_mem_usage: Optional[bool] = True,
->>>>>>> master
         device_map_option: Optional[str] = "auto",
         max_memory_per_gpu: Optional[Union[int, str]] = None,
         max_cpu_memory: Optional[Union[int, str]] = None,
@@ -108,90 +100,6 @@ class HFLM(LM):
         autogptq: Optional[Union[bool, str]] = False,
         **kwargs,
     ) -> None:
-=======
-        trust_remote_code: Optional[bool] = False,
-        gptq_use_triton: Optional[bool] = False,
-        inject_fused_attention: Optional[bool] = True,
-        bnb_4bit_quant_type: Optional[str] = None,
-        bnb_4bit_compute_dtype: Optional[Union[str, torch.dtype]] = None,
-        bnb_4bit_use_double_quant: Optional[bool] = False,
-    ):
-        """Initializes a HuggingFace `AutoModel` and `AutoTokenizer` for evaluation.
-        Args:
-            pretrained (str):
-                The HuggingFace Hub model ID name or the path to a pre-trained
-                model to load. This is effectively the `pretrained_model_name_or_path`
-                argument of `from_pretrained` in the HuggingFace `transformers` API.
-            quantized (str or bool, optional, defaults to False):
-                File name of a GPTQ quantized model to load. Set to `True` to use the
-                default name of the quantized model.
-            add_special_tokens (bool, optional, defaults to True):
-                Whether to add special tokens to the input sequences. If `None`, the
-                default value will be set to `True` for seq2seq models (e.g. T5) and
-                `False` for causal models.
-                WARNING: Evaluating causal models with `add_special_tokens=True` is
-                currently __not__ supported.
-            > Large model loading `accelerate` arguments
-            use_accelerate (bool, optional, defaults to False):
-                If True, uses the `accelerate` library to load a large model across
-                multiple devices.
-            low_cpu_mem_usage (bool, optional, defaults to True):
-                It True, uses the `accelerate` library to accelerate loading the model.
-            device_map_option (str, optional, defaults to "auto"):
-                The device map option to use when loading the model with
-                `accelerate`.
-                Options:
-                    "auto", "balanced", "balanced_low_0", "sequential"
-                See the `accelerate` docs for more details on these options:
-                https://huggingface.co/docs/transformers/main/en/main_classes/model#transformers.PreTrainedModel.from_pretrained.device_map
-            max_memory_per_gpu (Union[int, str], optional, defaults to None):
-                The maximum memory available for each GPU in bytes as `int` or in
-                the format f"{significand}{unit_symbol}" where {unit_symbol} is
-                any of ["GB", "MB", "GIB", "MIB"]. Refer to the `max_memory` arg in
-                the "Parameters for big model inference" section of the following
-                docs:
-                https://huggingface.co/docs/transformers/main/en/main_classes/model#transformers.PreTrainedModel.from_pretrained.max_memory
-            max_cpu_memory (Union[int, str], optional, defaults to None):
-                The maximum available CPU RAM in bytes as `int` or in the format
-                f"{significand}{unit_symbol}" where {unit_symbol} is any of
-                ["GB", "MB", "GIB", "MIB"]. Refer to the `max_memory` arg in the
-                "Parameters for big model inference" section of the following docs:
-                https://huggingface.co/docs/transformers/main/en/main_classes/model#transformers.PreTrainedModel.from_pretrained.max_memory
-            offload_folder (str, optional, defaults to "./offload"):
-                The folder to offload weights into if `device_map` contains any
-                "disk" value.
-            dtype (Union[str, torch.dtype], optional, defaults to None):):
-                Converts the model weights to `dtype`, if specified. Strings get
-                converted to `torch.dtype` objects (e.g. `float16` -> `torch.float16`).
-                Use `dtype="auto"` to derive the type from the model’s weights.
-            peft (str, optional, defaults to None):
-                Path of the adapter weights to load from Huggingface. This will usually
-                include a directory that includes the files `adapter_config.json` and
-                `adapter_model.bin`. Compatible with [PEFT](https://github.com/huggingface/peft)
-            load_in_8bit (bool, optional, defaults to False):
-                If True, will convert the loaded model into mixed-8bit quantized model. See:
-                https://huggingface.co/docs/transformers/main/en/main_classes/quantization#load-a-large-model-in-8bit
-            load_in_4bit (bool, optional, defaults to False):
-                If True, will convert the loaded model into mixed-4bit quantized model. See:
-                https://huggingface.co/docs/transformers/main/en/main_classes/quantization#load-a-large-model-in-4bit
-            trust_remote_code (bool, optional, defaults to False):
-                If True, will trust the remote code when loading the model.
-            gptq_use_triton (bool, optional, defaults to False):
-                Use Triton for GPTQ inference.
-            inject_fused_attention (bool, optional, defaults to True):
-                Inject fused attention into GPTQ model.
-            bnb_4bit_quant_type (str, optional, defaults to None):
-                The quantization type to use for BnB 4bit quantization. See:
-                https://github.com/huggingface/transformers/blob/main/src/transformers/utils/quantization_config.py#L77
-            bnb_4bit_compute_dtype (Union[str, torch.dtype], optional, defaults to None):
-                The compute dtype to use for BnB 4bit quantization. See:
-                https://github.com/huggingface/transformers/blob/main/src/transformers/utils/quantization_config.py#L74
-            bnb_4bit_use_double_quant (bool, optional, defaults to False):
-                Whether or not to use double quant to quantize the absmax.
-                https://github.com/huggingface/transformers/blob/main/src/transformers/utils/quantization_config.py#L80
-
-        """
->>>>>>> master
         super().__init__()
 
         # optionally: take in an already-initialized transformers.PreTrainedModel
@@ -723,7 +631,6 @@ class HFLM(LM):
 
     def tok_batch_encode(
         self,
-<<<<<<< HEAD
         strings: List[str],
         padding_side: str = "left",
         left_truncate_len: int = None,
@@ -744,21 +651,6 @@ class HFLM(LM):
             padding="longest",
             return_tensors="pt",
             add_special_tokens=add_special_tokens,
-=======
-        *,
-        pretrained: str,
-        revision: str,
-        subfolder: str,
-        tokenizer: Optional[str] = None,
-        trust_remote_code: Optional[bool] = False,
-    ) -> transformers.PreTrainedTokenizer:
-        tokenizer = super()._create_auto_tokenizer(
-            pretrained=pretrained,
-            revision=revision,
-            subfolder=subfolder,
-            tokenizer=tokenizer,
-            trust_remote_code=trust_remote_code,
->>>>>>> master
         )
         if left_truncate_len:
             encoding["input_ids"] = encoding["input_ids"][:, -left_truncate_len:]

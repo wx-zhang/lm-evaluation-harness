@@ -1,18 +1,27 @@
-import argparse
+
 import json
 import logging
 import os
-from argparse import Namespace
-import omegaconf
+import sys
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import wandb
+import re
+from pathlib import Path
 from lm_eval import tasks, evaluator, utils
 from huggingface_hub import login
-
+from lm_eval.tasks import initialize_tasks, include_path
+from lm_eval.api.registry import ALL_TASKS
 logging.getLogger("openai").setLevel(logging.INFO)
 logging.getLogger("absl").setLevel(logging.FATAL)
 logging.getLogger("googleapiclient").setLevel(logging.FATAL)
+def _handle_non_serializable(o):
+    if isinstance(o, np.int64) or isinstance(o, np.int32):
+        return int(o)
+    elif isinstance(o, set):
+        return list(o)
+    else:
+        return str(o)
 
 # def parse_args():
 #     parser = argparse.ArgumentParser()
@@ -79,29 +88,87 @@ def main(args):
         )
     if args.huggingface.enabled:
         login(token=args.huggingface.access_token)
+    
+    eval_logger = utils.eval_logger
+    eval_logger.setLevel(getattr(logging, f"{args.verbosity}"))
+    eval_logger.info(f"Verbosity set to {args.verbosity}")
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+    initialize_tasks(args.verbosity)
 
 
     
     # assert not args.provide_description  # not implemented
-
     if args.limit:
-        print(
-            "WARNING: --limit SHOULD ONLY BE USED FOR TESTING. REAL METRICS SHOULD NOT BE COMPUTED USING LIMIT."
+        eval_logger.warning(
+            " --limit SHOULD ONLY BE USED FOR TESTING."
+            "REAL METRICS SHOULD NOT BE COMPUTED USING LIMIT."
         )
 
+    if args.include_path is not None:
+        eval_logger.info(f"Including path: {args.include_path}")
+        include_path(args.include_path)
+
     if args.tasks is None:
-        task_names = tasks.ALL_TASKS
+        task_names = ALL_TASKS
+    elif args.tasks == "list":
+        eval_logger.info(
+            "Available Tasks:\n - {}".format(f"\n - ".join(sorted(ALL_TASKS)))
+        )
+        sys.exit()
     else:
-        task_names = utils.pattern_match(args.tasks.split(","), tasks.ALL_TASKS)
+        if os.path.isdir(args.tasks):
+            import glob
 
-    print(f"Selected Tasks: {task_names}")
+            task_names = []
+            yaml_path = os.path.join(args.tasks, "*.yaml")
+            for yaml_file in glob.glob(yaml_path):
+                config = utils.load_yaml_config(yaml_file)
+                task_names.append(config)
+        else:
+            tasks_list = args.tasks.split(",")
+            task_names = utils.pattern_match(tasks_list, ALL_TASKS)
+            for task in [task for task in tasks_list if task not in task_names]:
+                if os.path.isfile(task):
+                    config = utils.load_yaml_config(task)
+                    task_names.append(config)
+            task_missing = [
+                task
+                for task in tasks_list
+                if task not in task_names and "*" not in task
+            ]  # we don't want errors if a wildcard ("*") task name was used
 
+            if task_missing:
+                missing = ", ".join(task_missing)
+                eval_logger.error(
+                    f"Tasks were not found: {missing}\n"
+                    f"{utils.SPACING}Try `lm-eval --tasks list` for list of available tasks",
+                )
+                raise ValueError(
+                    f"Tasks {missing} were not found. Try `lm-eval --tasks list` for list of available tasks."
+                )
     
-    # load description dict when args.description_dict_path is not None
-    description_dict = {}
-    if args.description_dict_path:
-        with open(args.description_dict_path, "r") as f:
-            description_dict = json.load(f)
+    if args.output_path:
+        path = Path(args.output_path)
+        # check if file or 'dir/results.json' exists
+        if path.is_file() or Path(args.output_path).joinpath("results.json").is_file():
+            eval_logger.warning(
+                f"File already exists at {path}. Results will be overwritten."
+            )
+            output_path_file = path.joinpath("results.json")
+            assert not path.is_file(), "File already exists"
+        # if path json then get parent dir
+        elif path.suffix in (".json", ".jsonl"):
+            output_path_file = path
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path = path.parent
+        else:
+            path.mkdir(parents=True, exist_ok=True)
+            output_path_file = path.joinpath("results.json")
+    elif args.log_samples and not args.output_path:
+        assert args.output_path, "Specify --output_path"
+
+    eval_logger.info(f"Selected Tasks: {task_names}")
 
     results = evaluator.simple_evaluate(
         model=args.model,
@@ -111,36 +178,56 @@ def main(args):
         batch_size=args.batch_size,
         max_batch_size=args.max_batch_size,
         device=args.device,
-        no_cache=args.no_cache,
+        use_cache=args.use_cache,
         limit=args.limit,
-        description_dict=description_dict,
         decontamination_ngrams_path=args.decontamination_ngrams_path,
         check_integrity=args.check_integrity,
         write_out=args.write_out,
-        output_base_path=args.output_base_path,
+        log_samples=args.log_samples,
+        gen_kwargs=args.gen_kwargs,
     )
-    if args.wandb.enabled: 
-        for task_name, task_res in results['results'].items():
-            for metric_name, metric_value in task_res.items():
-                wandb.log({f'metrics/{task_name}/{metric_name}': metric_value})
+
+    
 
 
     dumped = json.dumps(results, indent=2)
     print(dumped)
 
-    if args.output_path:
-        dirname = os.path.dirname(args.output_path)
-        if dirname:
-            os.makedirs(dirname, exist_ok=True)
-        with open(args.output_path, "w") as f:
-            f.write(dumped)
+    if results is not None:
+        if args.log_samples:
+            samples = results.pop("samples")
+        dumped = json.dumps(results, indent=2, default=_handle_non_serializable)
+        if args.show_config:
+            print(dumped)
 
-    batch_sizes = ",".join(map(str, results["config"]["batch_sizes"]))
-    print(
-        f"{args.model} ({args.model_args}), limit: {args.limit}, provide_description: {args.provide_description}, "
-        f"num_fewshot: {args.num_fewshot}, batch_size: {args.batch_size}{f' ({batch_sizes})' if batch_sizes else ''}"
-    )
-    print(evaluator.make_table(results))
+        batch_sizes = ",".join(map(str, results["config"]["batch_sizes"]))
+
+        if args.wandb.enabled: 
+            for task_name, task_res in results['results'].items():
+                for metric_name, metric_value in task_res.items():
+                    wandb.log({f'metrics/{task_name}/{metric_name}': metric_value})
+
+        if args.output_path:
+            output_path_file.open("w").write(dumped)
+
+            if args.log_samples:
+                for task_name, config in results["configs"].items():
+                    output_name = "{}_{}".format(
+                        re.sub("/|=", "__", args.model_args), task_name
+                    )
+                    filename = path.joinpath(f"{output_name}.jsonl")
+                    samples_dumped = json.dumps(
+                        samples[task_name], indent=2, default=_handle_non_serializable
+                    )
+                    filename.open("w").write(samples_dumped)
+
+        print(
+            f"{args.model} ({args.model_args}), gen_kwargs: ({args.gen_kwargs}), limit: {args.limit}, num_fewshot: {args.num_fewshot}, "
+            f"batch_size: {args.batch_size}{f' ({batch_sizes})' if batch_sizes else ''}"
+        )
+        print(evaluator.make_table(results))
+        if "groups" in results:
+            print(evaluator.make_table(results, "groups"))
 
 
 if __name__ == "__main__":
