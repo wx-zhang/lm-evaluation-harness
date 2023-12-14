@@ -1,0 +1,48 @@
+# disable hydra outputs
+hydra:
+  output_subdir: null
+  run:
+    dir: /ibex/ai/home/zhanw0g/llm/hydra_output/
+
+defaults:
+  - _self_
+  - model@_here_: causal
+
+
+
+# seed
+seed: 1234 # default seed (1234) for the HF harness evaluation
+
+
+# task
+tasks: truthfulqa_mc # suggest to perform one task a time for better 
+num_fewshot: 0
+limit:  # Limit the number of examples per task. 
+data_sampling: 
+check_integrity: 
+provide_description: False
+
+
+
+# running config
+device: cuda:0
+batch_size: 32
+max_batch_size: 1024 # Maximal batch size to try with --batch_size autos
+
+
+
+# log
+output_base_path: /ibex/ai/home/zhanw0g/llm/
+output_path: /ibex/ai/home/zhanw0g/llm/${model_name}_${tasks}.json
+no_cache: True
+decontamination_ngrams_path:
+description_dict_path:
+write_out: False
+wandb: # waiting for test
+  enabled: False
+  entity: wxzhang0210
+  key: db78b53cf64ca6e9912b3409ad081dd1fd898b3a
+  project: llm-evaluation
+huggingface:
+  enabled: True
+  access_token: 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

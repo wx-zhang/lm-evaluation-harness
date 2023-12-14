@@ -67,6 +67,7 @@ from . import ceval
 from . import csatqa
 from . import haerae
 from . import cmmlu
+from . import advbench
 
 ########################################
 # Translation tasks
@@ -335,6 +336,7 @@ TASK_REGISTRY = {
     "haerae_rc": haerae.RC,
     "haerae_rw": haerae.RW,
     "haerae_sn": haerae.SN,
+    'advbench': advbench.AdvBenchGeneration,
     # Requires manual download
     # Requires manual download of data.
     # "storycloze_2016": storycloze.StoryCloze2016,
@@ -389,6 +391,7 @@ def add_json_task(task_name):
 
 
 def get_task(task_name):
+
     try:
         add_json_task(task_name)
         return TASK_REGISTRY[task_name]

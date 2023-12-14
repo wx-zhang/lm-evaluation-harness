@@ -1,0 +1,6 @@
+wandb_version: 1
+
+model_name:
+  value: fblgit/juanako-7b-UNA
+tasks:
+  value: ethics_virtue

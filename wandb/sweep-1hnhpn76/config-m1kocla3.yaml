@@ -1,0 +1,6 @@
+wandb_version: 1
+
+model_name:
+  value: tiiuae/falcon-7b-instruct
+tasks:
+  value: advbench

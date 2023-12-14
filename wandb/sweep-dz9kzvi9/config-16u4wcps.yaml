@@ -1,0 +1,6 @@
+wandb_version: 1
+
+model_name:
+  value: openchat/openchat_3.5
+tasks:
+  value: crows_pairs_english

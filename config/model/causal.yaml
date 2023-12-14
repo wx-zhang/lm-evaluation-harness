@@ -1,0 +1,4 @@
+model: hf-causal
+model_name: gpt2-xl
+model_args: "pretrained=${model_name}"
+

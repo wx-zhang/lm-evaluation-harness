@@ -164,12 +164,22 @@ class HFLM(BaseLM):
             return self.model(inps)[0]
 
     def _model_generate(self, context, max_length, eos_token_id):
-        generation_kwargs = {"do_sample": False, "max_length": max_length}
+
+        generation_kwargs = {"do_sample": False, "max_length": max_length, 'repetition_penalty':1.5}
+        
         if eos_token_id is not None:
             generation_kwargs["eos_token_id"] = eos_token_id
             generation_kwargs[
                 "pad_token_id"
             ] = eos_token_id  # setting eos_token_id as pad token
+        else:
+            eos_token_id = self.eot_token_id
+            generation_kwargs["eos_token_id"] = eos_token_id
+            generation_kwargs[
+                "pad_token_id"
+            ] = eos_token_id 
+
+        # import pdb;pdb.set_trace()
         return self.model.generate(context, **generation_kwargs)
 
 

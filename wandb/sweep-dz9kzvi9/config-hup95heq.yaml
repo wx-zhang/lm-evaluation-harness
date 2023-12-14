@@ -1,0 +1,6 @@
+wandb_version: 1
+
+model_name:
+  value: HuggingFaceH4/zephyr-7b-beta
+tasks:
+  value: crows_pairs_english

@@ -211,6 +211,7 @@ class BaseLM(LM):
 
     def loglikelihood(self, requests):
         new_reqs = []
+        
         for context, continuation in requests:
             if context == "":
                 # end of text as context
@@ -323,6 +324,7 @@ class BaseLM(LM):
             # because vectorizing is annoying, we first convert each (context, continuation) pair to padded
             # tensors, then we pack them together into a batch, call the model, and then pick it all apart
             # again because vectorizing is annoying
+            
 
             for _, context_enc, continuation_enc in chunk:
                 # sanity check
@@ -374,6 +376,7 @@ class BaseLM(LM):
             for (cache_key, _, _), logits, inp, inplen, cont_toks in zip(
                 chunk, multi_logits, inps, inplens, cont_toks_list
             ):
+
 
                 # Slice to original seq length
                 contlen = len(cont_toks)

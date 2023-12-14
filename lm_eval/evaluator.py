@@ -11,7 +11,7 @@ from lm_eval.models.gpt2 import HFLM
 
 import numpy as np
 import transformers
-
+import wandb
 
 @positional_deprecated
 def simple_evaluate(
@@ -65,14 +65,16 @@ def simple_evaluate(
     :return
         Dictionary of results
     """
-    random.seed(1234)
-    np.random.seed(1234)
+    # random.seed(1234)
+    # np.random.seed(1234)
+    # We have already seed everything in the main function
 
     assert tasks != [], "No tasks specified"
 
     if isinstance(model, str):
         if model_args is None:
             model_args = ""
+        
         lm = lm_eval.models.get_model(model).create_from_arg_string(
             model_args,
             {
@@ -81,6 +83,7 @@ def simple_evaluate(
                 "device": device,
             },
         )
+
     elif isinstance(model, transformers.PreTrainedModel):
         lm = lm_eval.models.get_model("hf-causal")(
             pretrained=model,
@@ -218,6 +221,7 @@ def evaluate(
     write_out_info = {}
 
     docs_for_decontamination = collections.defaultdict(list)
+    
 
     # get lists of each type of request
     for task_name, task in task_dict_items:
@@ -267,7 +271,7 @@ def evaluate(
                 prompt_details.append({"doc_id": doc_id})
 
             # print the prompt for the first few documents
-            if doc_id < 1:
+            if doc_id < 5:
                 print(
                     f"Task: {task_name}; document {doc_id}; context prompt (starting on next line):\n{ctx}\n(end of prompt on previous line)"
                 )
@@ -309,6 +313,7 @@ def evaluate(
         #       they should end up next to each other.
 
         print("Running", reqtype, "requests")
+
         resps = getattr(lm, reqtype)([req.args for req in reqs])
         resps = [
             x if req.index is None else x[req.index] for x, req in zip(resps, reqs)
