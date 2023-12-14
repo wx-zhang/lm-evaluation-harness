@@ -1,6 +1,0 @@
-wandb_version: 1
-
-model_name:
-  value: gpt2-xl
-tasks:
-  value: ethics_cm

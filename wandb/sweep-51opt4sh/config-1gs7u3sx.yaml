@@ -1,6 +1,0 @@
-wandb_version: 1
-
-model_name:
-  value: OpenBuddy/openbuddy-mistral-7b-v13
-tasks:
-  value: crows_pairs_english

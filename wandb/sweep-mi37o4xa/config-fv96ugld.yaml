@@ -1,6 +1,0 @@
-wandb_version: 1
-
-model_name:
-  value: meta-llama/Llama-2-7b-hf
-tasks:
-  value: ethics_cm

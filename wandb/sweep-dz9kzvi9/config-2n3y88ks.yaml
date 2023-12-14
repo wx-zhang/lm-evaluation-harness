@@ -1,6 +1,0 @@
-wandb_version: 1
-
-model_name:
-  value: PKU-Alignment/beaver-7b-v1.0
-tasks:
-  value: ethics_deontology

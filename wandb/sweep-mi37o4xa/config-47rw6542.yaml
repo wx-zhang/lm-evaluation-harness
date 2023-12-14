@@ -1,6 +1,0 @@
-wandb_version: 1
-
-model_name:
-  value: EleutherAI/gpt-j-6b
-tasks:
-  value: ethics_cm
