@@ -156,7 +156,7 @@ def main(args):
                 f"File already exists at {path}. Results will be overwritten."
             )
             output_path_file = path.joinpath("results.json")
-            assert not path.is_file(), "File already exists"
+            # assert not path.is_file(), "File already exists"
         # if path json then get parent dir
         elif path.suffix in (".json", ".jsonl"):
             output_path_file = path
