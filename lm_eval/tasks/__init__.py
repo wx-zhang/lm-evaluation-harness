@@ -187,7 +187,7 @@ def initialize_tasks(verbosity="INFO"):
     include_path(task_dir)
 
 
-def get_task(task_name):
+def get_task(task_name, config):
     try:
         return TASK_REGISTRY[task_name](config=config)
     except KeyError:

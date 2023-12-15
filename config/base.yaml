@@ -33,8 +33,8 @@ max_batch_size: 1024 # Maximal batch size to try with --batch_size autos
 
 # log
 output_base_path: /ibex/ai/home/zhanw0g/llm/
-output_path: /ibex/ai/home/zhanw0g/llm/${model_name}_${tasks}.json
-use_cache: False
+output_path: /ibex/ai/home/zhanw0g/llm/${model_name}_${tasks}
+use_cache: 
 description_dict_path:
 write_out: False
 verbosity: INFO
