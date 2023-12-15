@@ -1116,6 +1116,7 @@ class HFLM(LM):
                     **kwargs,
                 )
 
+
                 cont_toks_list = cont.tolist()
                 for cont_toks, context in zip(cont_toks_list, contexts):
                     # discard context + left-padding toks if using causal decoder-only LM

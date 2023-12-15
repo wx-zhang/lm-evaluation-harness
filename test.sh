@@ -10,7 +10,7 @@ python main.py model@_global_=gpt2-xl limit=15
 
 # benchmark test
 python main.py model@_global_=causal limit=15 tasks=truthfulqa_gen
-python main.py model@_global_=causal limit=15 tasks=truthfulqa_mc
+python main.py model@_global_=causal limit=15 tasks=truthfulqa_mc2
 python main.py model@_global_=causal limit=15 tasks=crows_pairs_english
 python main.py model@_global_=causal limit=15 tasks=headqa_en
 python main.py model@_global_=causal limit=15 tasks=ethics_cm
