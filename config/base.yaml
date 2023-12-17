@@ -15,7 +15,7 @@ seed: 1234 # default seed (1234) for the HF harness evaluation
 
 
 # task
-tasks: truthfulqa_mc # suggest to perform one task a time for better 
+tasks: truthfulqa_gen # suggest to perform one task a time for better 
 num_fewshot: 0
 limit:  # Limit the number of examples per task. 
 data_sampling: 
