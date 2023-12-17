@@ -190,8 +190,6 @@ def main(args):
     
 
 
-    dumped = json.dumps(results, indent=2)
-    print(dumped)
 
     if results is not None:
         if args.log_samples:
