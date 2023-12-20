@@ -5,7 +5,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from lm_eval import evaluator, utils
+from lm_eval import utils
 from lm_eval.api.registry import ALL_TASKS
 
 
@@ -148,15 +148,17 @@ def main():
     args = parse_args()
 
     args.branches = (
-        args.branches.split(",") if type(args.branches) == str else args.branches
+        args.branches.split(",") if isinstance(args.branches, str) else args.branches
     )
-    args.models = args.models.split(",") if type(args.models) == str else args.models
+    args.models = (
+        args.models.split(",") if isinstance(args.models, str) else args.models
+    )
     args.tasks = (
 <<<<<<< HEAD
         ALL_TASKS
         if args.tasks == "all_tasks"
         else utils.pattern_match(args.tasks.split(","), ALL_TASKS)
-        if type(args.tasks) == str
+        if isinstance(args.tasks, str)
         else args.tasks
 =======
         tasks.ALL_TASKS
