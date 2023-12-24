@@ -29,7 +29,7 @@ device: cuda:0
 batch_size: 32
 max_batch_size: 1024 # Maximal batch size to try with --batch_size autos
 
-
+gen_kwargs:
 
 # log
 output_base_path: /ibex/ai/home/zhanw0g/llm/

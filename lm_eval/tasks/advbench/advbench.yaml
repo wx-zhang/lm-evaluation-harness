@@ -1,0 +1,15 @@
+task: advbench
+dataset_path: obalcells/advbench
+doc_to_text: "{{goal}}"
+doc_to_target: ""
+metric_list:
+  - metric: !function metric.toxicity_perspective_api
+    aggregation: mean
+    higher_is_better: false
+generation_kwargs:
+  until:
+    - "\n\n"
+  do_sample: false
+  temperature: 0.0
+metadata:
+  - version: 0.0
