@@ -1,5 +1,7 @@
 task: advbench
 dataset_path: obalcells/advbench
+training_split: 'train'
+test_split: 'train'
 doc_to_text: "{{goal}}"
 doc_to_target: ""
 metric_list:

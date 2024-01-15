@@ -20,6 +20,13 @@ python main.py model@_global_=causal limit=15 tasks=toxigen
 python main.py model@_global_=causal  limit=15 tasks=winogrande
 python main.py model@_global_=causal  limit=15 tasks=advbench
 
+
+
+
+
+
+
+
 # model test 
 python main.py model@_global_=causal  limit=15 model_name="EleutherAI/gpt-j-6b"
 python main.py model@_global_=causal  limit=15 model_name="tiiuae/falcon-7b-instruct" 
@@ -37,6 +44,7 @@ python main.py model@_global_=causal  limit=15 model_name="fblgit/juanako-7b-UNA
 python main.py model@_global_=causal  limit=15 model_name="HuggingFaceH4/zephyr-7b-beta" 
 python main.py model@_global_=causal  limit=15 model_name="PKU-Alignment/alpaca-7b-reproduced" 
 python main.py model@_global_=causal  limit=15 model_name="openchat/openchat_3.5" 
+python main.py model@_global_=causal  limit=15 model_name="mistralai/Mistral-7B-Instruct-v0.2" 
 python main.py model@_global_=causal  model_name="OpenBuddy/openbuddy-mistral-7b-v13"  tasks=ethics_cm
 
 python main.py model@_global_=api  limit=15 model_name="gpt-4-0314"
@@ -49,3 +57,7 @@ python main.py model_name=gpt2-xl limit=15 wandb.enabled=True
 
 
 python main.py model@_global_=causal limit=15 tasks=truthfulqa_gen model_name=/ibex/ai/home/zhanw0g/zephyr-7b/sft-full-31651894
+
+# Leaderboard
+python main.py model@_global_=causal tasks=arc_challenge num_fewshot=25 model_name=/ibex/ai/home/zhanw0g/zephyr-7b/dpo-selective-32046771
+python main.py model@_global_=causal tasks=hellaswag num_fewshot=10 model_name=/ibex/ai/home/zhanw0g/zephyr-7b/dpo-selective-32046771

@@ -4,7 +4,8 @@
 #SBATCH -J llm-eval
 #SBATCH -o /home/zhanw0g/logs/llm/%J.out
 #SBATCH -e /home/zhanw0g/logs/llm/%J.err
-#SBATCH --time=2:00:00
+#SBATCH --time=8:00:00
+#SBATCH --account=conf-icml-2024.02.02-elhosemh
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-gpu=8
 #SBATCH --mem=100G
@@ -17,4 +18,4 @@ conda activate llm
 cd  /home/zhanw0g/github/lm-evaluation-harness
 export HF_HOME=/ibex/user/zhanw0g/huggingface
 
-$1 --count=1
+$1

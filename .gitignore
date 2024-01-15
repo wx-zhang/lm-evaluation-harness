@@ -18,3 +18,6 @@ profile_default/
 ipython_config.py
 
 *.egg-info/
+experiment/
+wandb/
+multirun/

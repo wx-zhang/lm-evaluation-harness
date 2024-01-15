@@ -6,6 +6,7 @@ import sys
 import hydra
 from omegaconf import  OmegaConf
 import wandb
+from lm_eval.utils import make_table
 import re
 from pathlib import Path
 from lm_eval import  evaluator, utils
@@ -23,40 +24,7 @@ def _handle_non_serializable(o):
     else:
         return str(o)
 
-# def parse_args():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("--model", required=True)
-#     parser.add_argument("--model_args", default="")
-#     parser.add_argument(
-#         "--tasks", default=None, choices=utils.MultiChoice(tasks.ALL_TASKS)
-#     )
-#     parser.add_argument("--provide_description", action="store_true")
-#     parser.add_argument("--num_fewshot", type=int, default=0)
-#     parser.add_argument("--batch_size", type=str, default=None)
-#     parser.add_argument(
-#         "--max_batch_size",
-#         type=int,
-#         default=None,
-#         help="Maximal batch size to try with --batch_size auto",
-#     )
-#     parser.add_argument("--device", type=str, default=None)
-#     parser.add_argument("--output_path", default='/ibex/ai/home/zhanw0g/llm')
-#     parser.add_argument(
-#         "--limit",
-#         type=float,
-#         default=None,
-#         help="Limit the number of examples per task. "
-#         "If <1, limit is a percentage of the total number of examples.",
-#     )
-#     parser.add_argument("--data_sampling", type=float, default=None)
-#     parser.add_argument("--no_cache", action="store_true")
-#     parser.add_argument("--decontamination_ngrams_path", default=None)
-#     parser.add_argument("--description_dict_path", default=None)
-#     parser.add_argument("--check_integrity", action="store_true")
-#     parser.add_argument("--write_out", action="store_true", default=False)
-#     parser.add_argument("--output_base_path", type=str, default=None)
 
-#     return parser.parse_args()
 def seed_everything(seed):
     import random, os
     import numpy as np
@@ -223,9 +191,9 @@ def main(args):
             f"{args.model} ({args.model_args}), gen_kwargs: ({args.gen_kwargs}), limit: {args.limit}, num_fewshot: {args.num_fewshot}, "
             f"batch_size: {args.batch_size}{f' ({batch_sizes})' if batch_sizes else ''}"
         )
-        print(evaluator.make_table(results))
+        print(make_table(results))
         if "groups" in results:
-            print(evaluator.make_table(results, "groups"))
+            print(make_table(results, "groups"))
 
 
 if __name__ == "__main__":

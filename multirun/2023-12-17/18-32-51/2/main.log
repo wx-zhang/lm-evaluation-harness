@@ -1,9 +1,0 @@
-[2023-12-17 18:33:27,364][lm-eval][INFO] - Verbosity set to INFO
-[2023-12-17 18:33:34,464][lm-eval][WARNING] -  --limit SHOULD ONLY BE USED FOR TESTING.REAL METRICS SHOULD NOT BE COMPUTED USING LIMIT.
-[2023-12-17 18:33:34,467][lm-eval][INFO] - Selected Tasks: ['ethics_utilitarianism']
-[2023-12-17 18:33:34,468][lm-eval][INFO] - Using device 'cuda:0'
-[2023-12-17 18:33:45,513][lm-eval][WARNING] - [Task: ethics_utilitarianism] metric acc is defined, but aggregation is not. using default aggregation=mean
-[2023-12-17 18:33:45,513][lm-eval][WARNING] - [Task: ethics_utilitarianism] metric acc is defined, but higher_is_better is not. using default higher_is_better=True
-[2023-12-17 18:33:48,668][lm-eval][WARNING] - Overwriting default num_fewshot of ethics_utilitarianism from None to 0
-[2023-12-17 18:33:48,669][lm-eval][INFO] - Building contexts for task on rank 0...
-[2023-12-17 18:33:48,670][lm-eval][INFO] - Running loglikelihood requests

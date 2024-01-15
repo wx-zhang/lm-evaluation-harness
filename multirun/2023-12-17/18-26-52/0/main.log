@@ -1,4 +1,0 @@
-[2023-12-17 18:26:53,282][lm-eval][INFO] - Verbosity set to INFO
-[2023-12-17 18:27:03,906][lm-eval][WARNING] -  --limit SHOULD ONLY BE USED FOR TESTING.REAL METRICS SHOULD NOT BE COMPUTED USING LIMIT.
-[2023-12-17 18:27:03,910][lm-eval][INFO] - Selected Tasks: ['ethics_justice']
-[2023-12-17 18:27:04,074][lm-eval][INFO] - Using device 'cuda:0'
