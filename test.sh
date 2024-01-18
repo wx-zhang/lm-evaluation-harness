@@ -48,3 +48,4 @@ python main.py model@_global_=causal  limit=15 model_name="meta-llama/Llama-2-70
 python main.py model_name=gpt2-xl limit=15 wandb.enabled=True
 
 
+python main.py model@_global_=causal limit=15 tasks=truthfulqa_gen model_name=/ibex/ai/home/zhanw0g/zephyr-7b/sft-full-31651894
