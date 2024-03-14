@@ -4,18 +4,25 @@ import logging
 import os
 import sys
 import hydra
-from omegaconf import  OmegaConf
+from omegaconf import OmegaConf
 import wandb
 from lm_eval.utils import make_table
 import re
+
+
 from pathlib import Path
-from lm_eval import  evaluator, utils
+from lm_eval import evaluator, utils
 from huggingface_hub import login
-from lm_eval.tasks import initialize_tasks, include_path
-from lm_eval.api.registry import ALL_TASKS
+from lm_eval.tasks import TaskManager, initialize_tasks, include_path
+from lm_eval.evaluator import request_caching_arg_to_dict
+DEFAULT_RESULTS_FILE = "results.json"
+
+
 logging.getLogger("openai").setLevel(logging.INFO)
 logging.getLogger("absl").setLevel(logging.FATAL)
 logging.getLogger("googleapiclient").setLevel(logging.FATAL)
+
+
 def _handle_non_serializable(o):
     if isinstance(o, np.int64) or isinstance(o, np.int32):
         return int(o)
@@ -26,10 +33,11 @@ def _handle_non_serializable(o):
 
 
 def seed_everything(seed):
-    import random, os
+    import random
+    import os
     import numpy as np
     import torch
-    
+
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
@@ -38,12 +46,13 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True
 
+
 @hydra.main(version_base=None, config_path="config", config_name="base")
 def main(args):
     # args = parse_args()
     OmegaConf.set_struct(args, False)
     print(OmegaConf.to_yaml(args))
-    seed_everything(args.seed)
+    seed_everything(args.seed[0])
 
     if args.wandb.enabled:
         wandb.login(key=args.wandb.key)
@@ -56,16 +65,22 @@ def main(args):
         )
     if args.huggingface.enabled:
         login(token=args.huggingface.access_token)
-    
+
     eval_logger = utils.eval_logger
     eval_logger.setLevel(getattr(logging, f"{args.verbosity}"))
     eval_logger.info(f"Verbosity set to {args.verbosity}")
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+    if args.predict_only:
+        args.log_samples = True
+    if (args.log_samples or args.predict_only) and not args.output_path:
+        raise ValueError(
+            "Specify --output_path if providing --log_samples or --predict_only"
+        )
+
     initialize_tasks(args.verbosity)
+    task_manager = TaskManager(args.verbosity, include_path=args.include_path)
 
-
-    
     # assert not args.provide_description  # not implemented
     if args.limit:
         eval_logger.warning(
@@ -78,10 +93,11 @@ def main(args):
         include_path(args.include_path)
 
     if args.tasks is None:
-        task_names = ALL_TASKS
+        eval_logger.error("Need to specify task to evaluate.")
+        sys.exit()
     elif args.tasks == "list":
         eval_logger.info(
-            "Available Tasks:\n - {}".format(f"\n - ".join(sorted(ALL_TASKS)))
+            "Available Tasks:\n - {}".format("\n - ".join(task_manager.all_tasks))
         )
         sys.exit()
     else:
@@ -94,16 +110,14 @@ def main(args):
                 config = utils.load_yaml_config(yaml_file)
                 task_names.append(config)
         else:
-            tasks_list = args.tasks.split(",")
-            task_names = utils.pattern_match(tasks_list, ALL_TASKS)
-            for task in [task for task in tasks_list if task not in task_names]:
+            task_list = args.tasks.split(",")
+            task_names = task_manager.match_tasks(task_list)
+            for task in [task for task in task_list if task not in task_names]:
                 if os.path.isfile(task):
                     config = utils.load_yaml_config(task)
                     task_names.append(config)
             task_missing = [
-                task
-                for task in tasks_list
-                if task not in task_names and "*" not in task
+                task for task in task_list if task not in task_names and "*" not in task
             ]  # we don't want errors if a wildcard ("*") task name was used
 
             if task_missing:
@@ -115,28 +129,37 @@ def main(args):
                 raise ValueError(
                     f"Tasks {missing} were not found. Try `lm-eval --tasks list` for list of available tasks."
                 )
-    
+
     if args.output_path:
         path = Path(args.output_path)
         # check if file or 'dir/results.json' exists
-        if path.is_file() or Path(args.output_path).joinpath("results.json").is_file():
+        if path.is_file():
+            raise FileExistsError(f"File already exists at {path}")
+        output_path_file = path.joinpath(DEFAULT_RESULTS_FILE)
+        if output_path_file.is_file():
             eval_logger.warning(
-                f"File already exists at {path}. Results will be overwritten."
+                f"File {output_path_file} already exists. Results will be overwritten."
             )
-            output_path_file = path.joinpath("results.json")
-            # assert not path.is_file(), "File already exists"
-        # if path json then get parent dir
         elif path.suffix in (".json", ".jsonl"):
             output_path_file = path
             path.parent.mkdir(parents=True, exist_ok=True)
             path = path.parent
         else:
             path.mkdir(parents=True, exist_ok=True)
-            output_path_file = path.joinpath("results.json")
-    elif args.log_samples and not args.output_path:
-        assert args.output_path, "Specify --output_path"
+
+    if args.trust_remote_code:
+        os.environ["HF_DATASETS_TRUST_REMOTE_CODE"] = str(args.trust_remote_code)
+        args.model_args = (
+            args.model_args
+            + f",trust_remote_code={os.environ['HF_DATASETS_TRUST_REMOTE_CODE']}"
+        )
 
     eval_logger.info(f"Selected Tasks: {task_names}")
+    eval_logger.info("Loading selected tasks...")
+
+    request_caching_args = request_caching_arg_to_dict(
+        cache_requests=args.cache_requests
+    )
 
     results = evaluator.simple_evaluate(
         model=args.model,
@@ -148,33 +171,36 @@ def main(args):
         device=args.device,
         use_cache=args.use_cache,
         limit=args.limit,
-        # decontamination_ngrams_path=args.decontamination_ngrams_path,
         check_integrity=args.check_integrity,
         write_out=args.write_out,
         log_samples=args.log_samples,
         gen_kwargs=args.gen_kwargs,
+        task_manager=task_manager,
+        predict_only=args.predict_only,
+        random_seed=args.seed[0],
+        numpy_random_seed=args.seed[1],
+        torch_random_seed=args.seed[2],
+        **request_caching_args,
     )
-
-    
-
-
 
     if results is not None:
         if args.log_samples:
             samples = results.pop("samples")
-        dumped = json.dumps(results, indent=2, default=_handle_non_serializable)
+        dumped = json.dumps(
+            results, indent=2, default=_handle_non_serializable, ensure_ascii=False
+        )
         if args.show_config:
             print(dumped)
 
         batch_sizes = ",".join(map(str, results["config"]["batch_sizes"]))
 
-        if args.wandb.enabled: 
+        if args.wandb.enabled:
             for task_name, task_res in results['results'].items():
                 for metric_name, metric_value in task_res.items():
                     wandb.log({f'metrics/{task_name}/{metric_name}': metric_value})
 
         if args.output_path:
-            output_path_file.open("w").write(dumped)
+            output_path_file.open("w", encoding="utf-8").write(dumped)
 
             if args.log_samples:
                 for task_name, config in results["configs"].items():
@@ -183,9 +209,12 @@ def main(args):
                     )
                     filename = path.joinpath(f"{output_name}.jsonl")
                     samples_dumped = json.dumps(
-                        samples[task_name], indent=2, default=_handle_non_serializable
+                        samples[task_name],
+                        indent=2,
+                        default=_handle_non_serializable,
+                        ensure_ascii=False,
                     )
-                    filename.open("w").write(samples_dumped)
+                    filename.write_text(samples_dumped, encoding="utf-8")
 
         print(
             f"{args.model} ({args.model_args}), gen_kwargs: ({args.gen_kwargs}), limit: {args.limit}, num_fewshot: {args.num_fewshot}, "

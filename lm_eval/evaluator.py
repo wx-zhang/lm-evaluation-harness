@@ -24,8 +24,6 @@ from lm_eval.tasks import TaskManager, get_task_dict
 from lm_eval.utils import eval_logger, positional_deprecated, simple_parse_args_string
 
 import numpy as np
-import transformers
-import wandb
 
 if TYPE_CHECKING:
     from lm_eval.api.model import LM

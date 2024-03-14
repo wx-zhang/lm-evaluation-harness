@@ -11,7 +11,7 @@ defaults:
 
 
 # seed
-seed: 1234 # default seed (1234) for the HF harness evaluation
+seed: [0,1234,1234] # default seed (1234) for the HF harness evaluation
 
 
 # task
@@ -28,18 +28,21 @@ include_path:
 device: cuda:0
 batch_size: 32
 max_batch_size: 1024 # Maximal batch size to try with --batch_size autos
+cache_requests:
 
 gen_kwargs:
 
 # log
 output_base_path: /ibex/ai/home/zhanw0g/llm/
-output_path: /ibex/ai/home/zhanw0g/llm/${model_name}_${tasks}
+output_path: results/${model_name}_${tasks}
 use_cache: 
+predict_only: False
 description_dict_path:
 write_out: False
 verbosity: INFO
 show_config: False
 log_samples: True
+trust_remote_code: True
 
 wandb: # waiting for test
   enabled: False

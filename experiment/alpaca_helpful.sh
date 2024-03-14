@@ -16,4 +16,4 @@ conda activate alignment
 
 
 # Alpaca
-alpaca_eval evaluate_from_model --output_path /home/zhanw0g/github/alpaca_eval/results/$1 --model_configs /home/zhanw0g/github/alpaca_eval/src/alpaca_eval/models_configs/$1
+alpaca_eval evaluate_from_model --output_path /home/zhanw0g/github/lm-evaluation-harness/experiment/results/$1 --model_configs /home/zhanw0g/github/lm-evaluation-harness/experiment/helpful_config/$1 
