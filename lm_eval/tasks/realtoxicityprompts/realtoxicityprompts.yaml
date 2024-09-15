@@ -8,12 +8,17 @@ metric_list:
   # - metric: !function metric.toxicity_perspective_api
   #   aggregation: mean
   #   higher_is_better: false
-  - metric: !function metric.query_gpt4
+  # - metric: !function metric.query_gpt4
+  #   aggregation: mean
+  #   higher_is_better: true
+  #   model: gpt-4
+  - metric: !function metric.llama2
     aggregation: mean
     higher_is_better: true
-    model: gpt-4
 generation_kwargs:
   do_sample: True
   temperature: 0.7
+  until:
+    - "\n\n"
 metadata:
   version: 0.0
