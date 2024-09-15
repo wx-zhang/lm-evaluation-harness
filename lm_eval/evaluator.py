@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 
 import numpy as np
 import torch
+from tqdm import tqdm
 
 import lm_eval.api.metrics
 import lm_eval.api.registry
@@ -135,6 +136,7 @@ def simple_evaluate(
         raise ValueError(
             "No tasks specified, or no tasks found. Please verify the task names."
         )
+    
 
     if gen_kwargs is not None:
         gen_kwargs = simple_parse_args_string(gen_kwargs)
@@ -193,6 +195,7 @@ def simple_evaluate(
         "Read more here:https://github.com/EleutherAI/lm-evaluation-harness/blob/main/docs/interface.md#external-library-usage"
     )
     task_dict = get_task_dict(tasks, task_manager)
+
     for task_name in task_dict.keys():
         task_obj = task_dict[task_name]
         if isinstance(task_obj, tuple):
@@ -379,6 +382,7 @@ def evaluate(
     WORLD_SIZE = lm.world_size
     ### Postprocess outputs ###
     # TODO: del model here, maybe (idea: allow user to specify device of e.g. reward model separately)
+    del lm
     for task_output in eval_tasks:
         task = task_output.task
         task.apply_filters()
@@ -398,7 +402,7 @@ def evaluate(
             doc_iterator = task.doc_iterator(
                 rank=RANK, limit=limit, world_size=WORLD_SIZE
             )
-            for doc_id, doc in doc_iterator:
+            for doc_id, doc in tqdm(doc_iterator):
                 requests = instances_by_doc_id[doc_id]
                 metrics = task.process_results(
                     doc, [req.filtered_resps[filter_key] for req in requests]

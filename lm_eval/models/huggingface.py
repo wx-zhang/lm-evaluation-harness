@@ -691,6 +691,7 @@ class HFLM(TemplateLM):
         left_truncate_len: int = None,
         truncation: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
+        print (strings)
         # encode a batch of strings. converts to tensors and pads automatically, unlike tok_encode.
         old_padding_side = self.tokenizer.padding_side
         self.tokenizer.padding_side = padding_side
@@ -713,6 +714,8 @@ class HFLM(TemplateLM):
 
             # NOTE: Batchwise tokenization for 'chat' model is not supported in HuggingFace yet. 
             for chat in chats:
+            
+
                 output = self.tokenizer.apply_chat_template(
                     chat, 
                     truncation=truncation, 
@@ -1191,6 +1194,8 @@ class HFLM(TemplateLM):
                     until = kwargs.pop("until")
                     if isinstance(until, str):
                         until = [kwargs]
+                    elif until == None:
+                        pass
                     elif not isinstance(until, list):
                         raise ValueError(
                             f"Expected `kwargs['until']` to be of type Union[str,list] but got {until}"
@@ -1231,6 +1236,7 @@ class HFLM(TemplateLM):
                 kwargs["max_length"] = context_enc.shape[1] + max_gen_toks
 
             # perform batched generation
+ 
             cont = self._model_generate(
                 context=context_enc,
                 attention_mask=attn_masks,

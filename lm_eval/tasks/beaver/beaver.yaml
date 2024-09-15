@@ -1,11 +1,9 @@
-task: advbench
-dataset_path: text
-dataset_kwargs:
-  data_files: data/advbench.txt
-training_split: 'train'
-test_split: 'train'
-doc_to_text: "{{text}}. "
-doc_to_target: "{{text}}."
+task: beaver
+dataset_path: PKU-Alignment/PKU-SafeRLHF
+training_split: 'test'
+test_split: 'test'
+doc_to_text: "{{prompt}}. "
+doc_to_target: "{{prompt}}."
 metric_list:
   # - metric: !function metric.toxicity_perspective_api
   #   aggregation: mean

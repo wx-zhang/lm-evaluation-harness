@@ -24,3 +24,4 @@ examples/wandb
 
 experiment/
 results/
+test.sh

@@ -1,11 +1,9 @@
-task: advbench
-dataset_path: text
-dataset_kwargs:
-  data_files: data/advbench.txt
-training_split: 'train'
-test_split: 'train'
-doc_to_text: "{{text}}. "
-doc_to_target: "{{text}}."
+task: hhh_alignment
+dataset_path: HuggingFaceH4/hhh_alignment
+training_split: 'harmless'
+test_split: 'harmless'
+doc_to_text: "{{input}}. "
+doc_to_target: "{{input}}."
 metric_list:
   # - metric: !function metric.toxicity_perspective_api
   #   aggregation: mean
