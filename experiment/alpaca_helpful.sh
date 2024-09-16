@@ -2,13 +2,12 @@
 #SBATCH -N 1
 #SBATCH --partition=batch
 #SBATCH -J alpaca
-#SBATCH -o ./logs/llm/%J.out
-#SBATCH -e ./logs/llm/%J.err
-#SBATCH --account=conf-eccv-2024.03.14-elhosemh
-#SBATCH --time=4:00:00
+#SBATCH -o ./logs/alpaca/%J.out
+#SBATCH -e ./logs/alpaca/%J.err
+#SBATCH --time=24:00:00
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-gpu=8
-#SBATCH --mem=200G
+#SBATCH --mem=100G
 
 source /home/zhanw0g/anaconda3/bin/activate
 conda activate alignment

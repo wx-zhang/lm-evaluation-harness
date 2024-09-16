@@ -2,9 +2,9 @@
 #SBATCH -N 1
 #SBATCH --partition=batch
 #SBATCH -J llm-eval
-#SBATCH -o /home/zhanw0g/logs/llm/%J.out
-#SBATCH -e /home/zhanw0g/logs/llm/%J.err
-#SBATCH --time=8:00:00
+#SBATCH -o ./logs/openllm/%J.out
+#SBATCH -e ./logs/openllm/%J.err
+#SBATCH --time=20:00:00
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-gpu=8
 #SBATCH --mem=100G
